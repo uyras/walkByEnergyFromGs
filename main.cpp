@@ -6,6 +6,7 @@
 #include "config.h"
 #include "PartArray.h"
 #include <ctime>
+#include <stdexcept>
 
 using namespace std;
 
@@ -15,7 +16,7 @@ double eAvg, eAvgMin, eAvgMax, Einit, eTemp, Emin=99999;
 Vect mAvg;
 StateMachineFree minState;
 
-ofstream f("res.dat");
+ofstream f("averageTrying.dat");
 
 void walkEnergy(int deepness, PartArray *a, vector<Part*>::iterator iter){
     if (iter==a->parts.begin()){
@@ -54,39 +55,69 @@ void walkEnergy(int deepness, PartArray *a, vector<Part*>::iterator iter){
     }
 }
 
+bool walkNotAllEnergy(int count, PartArray* a){
+    int rotated = 0; Part* temp;
+    while (rotated<count){
+        int ran = config::Instance()->rand();
+        int rm = config::Instance()->rand_max;
+        ran = floor(double(ran)/double(rm)*double(a->count()-1));
+        try {
+            temp = a->parts.at(ran);
+        }
+        catch (const std::out_of_range& oor) {
+            std::cerr << "Out of Range error: " << oor.what() << '\n';
+        }
+
+
+        if (!temp->state){
+            temp->rotate();
+            rotated++;
+        }
+    }
+    return true;
+}
+
 int main(){
     config::Instance()->set2D();
+    config::Instance()->randmode_standart();
     config::Instance()->srand(time(NULL));
 
     cout<<"drop..."<<endl;
-    PartArray *a = new PartArray(15,15,1,25);
+    PartArray *a = new PartArray(30,30,1,15);
+    a->save("sys.dat");
+    cout<<"count - "<<a->count()<<endl;
+    int experiments = 5000;
     //a->save("sys.dat");
     //PartArray *a = new PartArray("sys.dat");
     cout<<"turn all UP..."<<endl;
     //a->setToGroundState();
-    a->turnRight();
+
+    //поворачиваем все вверх
+    a->turnUp();
     a->state->hardReset();
 
+    //Считаем начальную энергию
     Einit = a->calcEnergy1FastIncrementalFirst();
 
-    int stepsSum=0;
-    for (int i=1;i<=a->count();i++){
-        walkEnergy(i,a, a->parts.begin());
-        stepsSum+=totalSteps;
-        mAvg= mAvg/(double)totalSteps;
-        cout<<i<<"parts, average E="<<eAvg/(double)totalSteps;
-        cout<<" Mx="<<mAvg.x<<" My="<<mAvg.y<<" |M|="<<mAvg.length()/(double)totalSteps;
-        cout<<" steps="<<totalSteps<<endl;
-        f<<eAvg/(double)totalSteps<<"\t"
-           <<eAvgMin<<"\t"
-             <<eAvgMax<<"\t"
-        <<a->count()-(i*2)<<"\t"<<mAvg.x<<"\t"<<mAvg.y<<"\t"<<mAvg.length()<<"\t"<<stepsSum<<endl;
-    }
-    cout<<endl;
-    cout<<"total steps="<<stepsSum<<" 2^"<<a->count()<<"="<<pow(2,a->count())<<endl;
+    for (int i=1;i<a->count();i++){
+        double eAvg2=0;
 
-    cout<<"Emin="<<Emin<<endl;
-    minState.draw();
+        //Обходим рекурсивно несколько вариантов
+        for (int j=0;j<experiments;j++){
+            walkNotAllEnergy(i,a);
+            //a->state->draw();
+            eAvg2+=a->calcEnergy1FastIncremental(Einit);
+            a->state->reset();
+        }
+        cout<<i<<"\t"<<eAvg2/(double)experiments<<"\t"<<endl;
+        f<<i<<"\t"<<eAvg2/(double)experiments<<"\t"<<endl;
+    }
+
+    cout<<endl;
+    //a->setToGroundState();
+    //cout<<"Emin = "<<a->calcEnergy1()<<endl;
+
+    //minState.draw();
 
 
     cout<<"finish";
