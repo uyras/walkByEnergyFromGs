@@ -4,7 +4,7 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 
-x,y = np.loadtxt("D:\\projects\\walkByEnergyFromGs\\averageTrying.dat", unpack=True)
+x,y = np.loadtxt("D:\\projects\\walkByEnergyFromGs\\averageTrying_15_5000.dat", unpack=True)
 
 plt.plot(x,y)
 plt.title('chaos level')

@@ -16,7 +16,11 @@ double eAvg, eAvgMin, eAvgMax, Einit, eTemp, Emin=99999;
 Vect mAvg;
 StateMachineFree minState;
 
-ofstream f("averageTrying.dat");
+ofstream f("averageTrying_60_35000.dat");
+
+int experiments = 50000;
+int parts = 60;
+bool showGS = false;
 
 void walkEnergy(int deepness, PartArray *a, vector<Part*>::iterator iter){
     if (iter==a->parts.begin()){
@@ -83,10 +87,9 @@ int main(){
     config::Instance()->srand(time(NULL));
 
     cout<<"drop..."<<endl;
-    PartArray *a = new PartArray(30,30,1,15);
+    PartArray *a = new PartArray(30,30,1,parts);
     a->save("sys.dat");
     cout<<"count - "<<a->count()<<endl;
-    int experiments = 5000;
     //a->save("sys.dat");
     //PartArray *a = new PartArray("sys.dat");
     cout<<"turn all UP..."<<endl;
@@ -114,8 +117,14 @@ int main(){
     }
 
     cout<<endl;
-    //a->setToGroundState();
-    //cout<<"Emin = "<<a->calcEnergy1()<<endl;
+
+    if (showGS){
+        if (a->count()<23)
+            a->setToGroundState();
+        else
+            a->setToPTGroundState(10,5000);
+        cout<<"Emin = "<<a->calcEnergy1()<<endl;
+    }
 
     //minState.draw();
 
